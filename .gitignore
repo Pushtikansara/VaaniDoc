@@ -1,0 +1,69 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.venv.bak/
+
+# Jupyter / Notebooks
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+
+# Hugging Face model caches (large downloads)
+~/.cache/huggingface/
+.cache/huggingface/
+*.safetensors
+*.pt
+*.pth
+*.onnx
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Testing / coverage / linting
+.pytest_cache/
+.mypy_cache/
+.ruff_cache
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE / editor
+.idea/
+.vscode/
+*.swp
+*.swo
