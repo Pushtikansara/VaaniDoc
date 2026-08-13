@@ -159,6 +159,7 @@ SYMPTOM_DB: dict[str, SymptomEntry] = {
         "synonyms": [
             "shortness of breath",
             "breathlessness",
+            "breathless",
             "difficulty breathing",
             "breathing difficulty",
             "trouble breathing",
