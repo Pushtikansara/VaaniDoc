@@ -60,3 +60,15 @@ async def transcribe_audio(
     finally:
         await audio.close()
         temp_path.unlink(missing_ok=True)
+
+
+from ai.clinical.extraction import extract_symptoms
+from ai.clinical.schemas import ClinicalExtractionRequest, ClinicalInformation
+
+@app.post("/api/clinical/extract", response_model=ClinicalInformation)
+async def extract_clinical_info(request: ClinicalExtractionRequest):
+    """
+    Extracts clinical symptoms from patient text and returns them.
+    """
+    symptoms = extract_symptoms(request.text)
+    return ClinicalInformation(symptoms=symptoms)
