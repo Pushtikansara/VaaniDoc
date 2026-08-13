@@ -123,3 +123,102 @@ def test_optional_fields_are_none():
     assert s.duration is None
     assert s.body_part is None
     assert s.confidence is None
+
+
+# ── Negation tests ──────────────────────────────────────────────────
+
+def test_negation_dont():
+    result = extract_symptoms("I don't have fever.")
+    assert result == []
+
+def test_negation_do_not():
+    result = extract_symptoms("I do not have fever.")
+    assert result == []
+
+def test_negation_no():
+    result = extract_symptoms("No fever.")
+    assert result == []
+
+def test_negation_denies():
+    result = extract_symptoms("The patient denies fever.")
+    assert result == []
+
+def test_negation_denied():
+    result = extract_symptoms("The patient denied fever.")
+    assert result == []
+
+def test_negation_negative_for():
+    result = extract_symptoms("Negative for fever.")
+    assert result == []
+
+def test_negation_without():
+    result = extract_symptoms("I am without fever.")
+    assert result == []
+
+def test_negation_local_scope_but():
+    result = extract_symptoms("I have fever but no headache.")
+    assert len(result) == 1
+    assert result[0].name == "fever"
+
+def test_negation_local_scope_dont():
+    result = extract_symptoms("I don't have fever but I have headache.")
+    assert len(result) == 1
+    assert result[0].name == "headache"
+
+def test_negation_local_scope_and():
+    result = extract_symptoms("I have headache and no vomiting.")
+    assert len(result) == 1
+    assert result[0].name == "headache"
+
+def test_negation_local_scope_dont_second():
+    result = extract_symptoms("I don't have headache but I have fever.")
+    assert len(result) == 1
+    assert result[0].name == "fever"
+
+def test_negation_local_scope_punctuation():
+    result = extract_symptoms("I don't have fever. I have headache.")
+    assert len(result) == 1
+    assert result[0].name == "headache"
+
+def test_negation_sentence_boundaries():
+    result = extract_symptoms("No fever. No headache. I have cough.")
+    assert len(result) == 1
+    assert result[0].name == "cough"
+
+def test_synonym_negation_1():
+    result = extract_symptoms("I don't have head pain.")
+    assert result == []
+
+def test_synonym_negation_2():
+    result = extract_symptoms("No stomach pain.")
+    assert result == []
+
+def test_synonym_negation_3():
+    result = extract_symptoms("I do not feel breathless.")
+    assert result == []
+
+def test_mixed_negation_and_active():
+    result = extract_symptoms("I have fever, headache and no vomiting.")
+    assert len(result) == 2
+    names = [s.name for s in result]
+    assert names == ["fever", "headache"]
+
+def test_repeated_symptom_active_wins():
+    result = extract_symptoms("I don't have headache. I have headache now.")
+    assert len(result) == 1
+    assert result[0].name == "headache"
+
+def test_negation_case_insensitive():
+    result = extract_symptoms("I DON'T HAVE FEVER.")
+    assert result == []
+
+def test_negation_punctuation_comma():
+    result = extract_symptoms("I don't have fever, but I have headache.")
+    assert len(result) == 1
+    assert result[0].name == "headache"
+
+def test_no_false_global_negation():
+    result = extract_symptoms("I don't have fever but I have headache and cough.")
+    assert len(result) == 2
+    names = [s.name for s in result]
+    assert names == ["headache", "cough"]
