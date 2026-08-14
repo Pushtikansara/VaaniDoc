@@ -1,0 +1,28 @@
+# -------------------------------------------------------------------------
+# VaaniDoc backend dependencies
+# -------------------------------------------------------------------------
+# Generated from the official installation instructions in:
+#   https://github.com/AI4Bharat/IndicTrans2/tree/main/huggingface_interface
+#
+# Note: The old IndicTransToolkit dependency has been removed; the new
+# CTranslate2-based inference path does not require it.
+
+# --- Web framework (existing backend) ---
+fastapi
+uvicorn[standard]
+python-multipart
+
+# --- ASR / audio (existing ai/speech module) ---
+torch>=2.5
+torchaudio
+soundfile
+numpy>=2.1
+
+# --- IndicTrans2 translation (new) ---
+# Uses official CTranslate2 inference path
+transformers>=4.51
+sentencepiece
+sacremoses
+
+# --- Testing ---
+pytest
