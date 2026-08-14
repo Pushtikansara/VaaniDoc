@@ -310,7 +310,7 @@ VaaniDoc/
 │   └── package.json
 │
 ├── backend/
-│   ├── main.py
+│   ├── speech_api.py
 │   ├── asr.py
 │   ├── translation.py
 │   ├── extraction.py
@@ -366,13 +366,19 @@ pip install -r requirements.txt
 Start the API:
 
 ```bash
-uvicorn main:app --reload
+uvicorn speech_api:app --reload
 ```
 
 Backend:
 
 ```text
 http://localhost:8000
+```
+
+If you prefer to run from the repository root instead of `backend/`, this also works:
+
+```bash
+python -m uvicorn backend.speech_api:app --reload
 ```
 
 ---
