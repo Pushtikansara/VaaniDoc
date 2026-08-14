@@ -13,41 +13,7 @@ Does not diagnose the patient.
 Does not allow AI output to silently overwrite doctor-entered information.
 */
 
-interface ClinicalData {
-  chiefComplaint: string;
-  symptoms: string[];
-  duration: string;
-  severity: string;
-  bodyLocation: string;
-  associatedSymptoms: string[];
-  urgency: string;
-}
-
-interface DoctorReviewProps {
-  /** The English AI-generated translation (PRIMARY content) */
-  englishText: string;
-
-  /** The original Indian-language patient statement (source/reference) */
-  originalText: string;
-
-  /** Translation verification status */
-  verificationStatus: "consistent" | "needs_review";
-
-  /** Warning messages from the safety checker */
-  warnings: Array<{ type: string; message: string }>;
-
-  /** Clinical data entered by the doctor or extracted from the translation */
-  clinicalData: ClinicalData;
-
-  /** Callback when doctor wants to update clinical information */
-  onClinicalDataChange: (data: ClinicalData) => void;
-
-  /** Callback when doctor wants to copy or export the case */
-  onCopyCase?: () => void;
-
-  /** Callback when doctor wants to re-translate */
-  onRetranslate?: () => void;
-}
+import React, { useState } from "react";
 
 /** DoctorReview - Doctor-side translation review component */
 export default function DoctorReview({
@@ -59,7 +25,7 @@ export default function DoctorReview({
   onClinicalDataChange,
   onCopyCase,
   onRetranslate,
-}: DoctorReviewProps) {
+}) {
   const [showWarnings, setShowWarnings] = useState(false);
   const [editing, setEditing] = useState(false);
 
@@ -82,20 +48,19 @@ export default function DoctorReview({
   const { label, className, accent } = getStatusInfo();
 
   /* Warning messages HTML */
-  const warningItems = warnings.map(
-    (w, i) => /* border-top py-2 */
-  `
-    <div className="pb-2 border-t border-gray-200 last:border-0">
-      <p className="text-sm text-gray-600">${w.message}</p>
-    </div>
-  `
+  const warningItems = (warnings || []).map(
+    (w, i) => (
+      <div key={i} className="pb-2 border-t border-gray-200 last:border-0">
+        <p className="text-sm text-gray-600">{w.message}</p>
+      </div>
+    )
   );
 
   /* Handle warning toggle */
   const toggleWarnings = () => setShowWarnings(!showWarnings);
 
   /* Handle clinical data change */
-  const handleChange = (field: keyof ClinicalData, value: string) => {
+  const handleChange = (field, value) => {
     onClinicalDataChange({
       ...clinicalData,
       [field]: value,

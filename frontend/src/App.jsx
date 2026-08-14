@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { transcribeAudio } from "./api";
-import { mediaBlobToWav } from "./audio";
-import { SUPPORTED_LANGUAGES, assertSupportedLanguages } from "./languages";
-import TranscriptDisplay from "./TranscriptDisplay";
-import DoctorReview from "./DoctorReview";
+import { transcribeAudio } from "./services/api";
+import { mediaBlobToWav } from "./services/audio";
+import { SUPPORTED_LANGUAGES, assertSupportedLanguages } from "./services/languages";
+import TranscriptDisplay from "./components/TranscriptDisplay";
+import DoctorReview from "./components/DoctorReview";
 
 assertSupportedLanguages();
 
@@ -12,14 +12,14 @@ export default function App() {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [transcript, setTranscript] = useState("");
-  const [confirmationState, setConfirmationState] = useState<"idle" | "confirmed" | "edited" | "re_record">("idle");
+  const [confirmationState, setConfirmationState] = useState("idle");
   const [showEnglish, setShowEnglish] = useState(false);
   const [error, setError] = useState("");
 
   const [originalText, setOriginalText] = useState("");
   const [englishText, setEnglishText] = useState("");
-  const [verificationStatus, setVerificationStatus] = useState<"consistent" | "needs_review">("consistent");
-  const [warnings, setWarnings] = useState<Array<{ type: string; message: string }>>([]);
+  const [verificationStatus, setVerificationStatus] = useState("consistent");
+  const [warnings, setWarnings] = useState([]);
 
   const mediaRecorderRef = useRef(null);
   const streamRef = useRef(null);
@@ -94,8 +94,9 @@ export default function App() {
 
           setTranscript(transcriptText);
           setOriginalText(transcriptText);
-          // Immediately call backend to translate and check safety
-          setConfirmationState("translating");
+          // Wait for user to confirm the patient statement
+          setConfirmationState("idle");
+          setIsProcessing(false);
         } catch (err) {
           setError(err.message || "Transcription failed.");
           setIsProcessing(false);
@@ -207,7 +208,7 @@ export default function App() {
               <option key={item.code} value={item.code}>
                 {item.label}
               </option>
-            ))
+            ))}
           </select>
         </label>
 
@@ -259,6 +260,7 @@ export default function App() {
               <button onClick={reRecord} className="btn">
                 Re-record
               </button>
+            </div>
             <DoctorReview
     englishText={englishText}
     originalText={originalText}
@@ -283,7 +285,6 @@ export default function App() {
       // Re-translate the patient statement
     }}
   />
-  </div>
           </div>
         ) : null}
 

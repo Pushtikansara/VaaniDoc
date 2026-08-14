@@ -21,6 +21,7 @@ numpy>=2.1
 # --- IndicTrans2 translation (new) ---
 # Uses official CTranslate2 inference path
 transformers>=4.51
+ctranslate2
 sentencepiece
 sacremoses
 

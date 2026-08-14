@@ -8,27 +8,6 @@ Makes warnings visually obvious. Doctor remains the final clinical reviewer.
 
 import { useState } from "react";
 
-/* Props for the TranscriptDisplay component */
-interface TranscriptDisplayProps {
-  /** The original Indian-language patient statement */
-  originalText: string;
-
-  /** The English translation (AI-generated) */
-  englishText: string;
-
-  /** Translation verification status from the safety checker */
-  verificationStatus: "consistent" | "needs_review";
-
-  /** Warning messages from the safety checker */
-  warnings: Array<{ type: string; message: string }>;
-
-  /** Callback when the doctor wants to review/edit */
-  onReview?: () => void;
-
-  /** Callback when the doctor wants to copy/export data */
-  onCopy?: () => void;
-}
-
 /** TranscriptDisplay - Shows original + English translation with safety status */
 export default function TranscriptDisplay({
   originalText,
@@ -37,7 +16,7 @@ export default function TranscriptDisplay({
   warnings,
   onReview,
   onCopy,
-}: TranscriptDisplayProps) {
+}) {
   const [showWarnings, setShowWarnings] = useState(false);
 
   const hasWarnings = warnings && warnings.length > 0;
