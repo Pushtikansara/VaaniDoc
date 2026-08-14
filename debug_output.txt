@@ -1,0 +1,1 @@
+Gujarati ha: 'અ' -> None
