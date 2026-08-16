@@ -82,3 +82,19 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Local ML models
+backend/models/
+models/
+*.bin
+
+# Local/cache files
+.cache/
+.pytest_cache/
+
+IndicTrans2/
+backend/models/
+*.bin
+.env
+node_modules/
+__pycache__/

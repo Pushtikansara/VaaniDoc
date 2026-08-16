@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { transcribeAudio } from "./services/api";
 import { mediaBlobToWav } from "./services/audio";
-import { SUPPORTED_LANGUAGES, assertSupportedLanguages } from "./services/languages";
+import {
+  SUPPORTED_LANGUAGES,
+  assertSupportedLanguages,
+} from "./services/languages";
 import TranscriptDisplay from "./components/TranscriptDisplay";
 import DoctorReview from "./components/DoctorReview";
 
@@ -14,12 +17,22 @@ export default function App() {
   const [transcript, setTranscript] = useState("");
   const [confirmationState, setConfirmationState] = useState("idle");
   const [showEnglish, setShowEnglish] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = "";
 
   const [originalText, setOriginalText] = useState("");
   const [englishText, setEnglishText] = useState("");
   const [verificationStatus, setVerificationStatus] = useState("consistent");
   const [warnings, setWarnings] = useState([]);
+
+  const [clinicalData, setClinicalData] = useState({
+    chiefComplaint: "",
+    symptoms: [],
+    duration: "",
+    severity: "",
+    bodyLocation: "",
+    associatedSymptoms: [],
+    urgency: "routine",
+  });
 
   const mediaRecorderRef = useRef(null);
   const streamRef = useRef(null);
@@ -43,10 +56,17 @@ export default function App() {
     setTranscript("");
     setOriginalText("");
     setEnglishText("");
-    setVerificationStatus("consistent");
-    setWarnings([]);
-    setConfirmationState("idle");
     setShowEnglish(false);
+    setConfirmationState("idle");
+    setClinicalData({
+      chiefComplaint: "",
+      symptoms: [],
+      duration: "",
+      severity: "",
+      bodyLocation: "",
+      associatedSymptoms: [],
+      urgency: "routine",
+    });
 
     if (!navigator.mediaDevices?.getUserMedia) {
       setError("Microphone is not supported in this browser.");
@@ -87,7 +107,9 @@ export default function App() {
         setIsProcessing(true);
 
         try {
-          const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
+          const blob = new Blob(chunksRef.current, {
+            type: recorder.mimeType || "audio/webm",
+          });
           const wavBlob = await mediaBlobToWav(blob);
           const result = await transcribeAudio(wavBlob, language);
           const transcriptText = result.transcript || "";
@@ -143,13 +165,43 @@ export default function App() {
 
       // Update state with translation and verification results
       setEnglishText(data.english_text || "");
-      setVerificationStatus(data.verification.status || "consistent");
-      setWarnings(data.verification.warnings || []);
+      setVerificationStatus(data.verification?.status || "consistent");
+      setWarnings(data.verification?.warnings || []);
 
       // Show English translation for doctor
       setShowEnglish(true);
       setConfirmationState("confirmed");
       setIsProcessing(false);
+
+      // Extract clinical information from the English translation
+      if (data.english_text) {
+        try {
+          const clinicalResponse = await fetch("/api/clinical/extract", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              text: data.english_text,
+            }),
+          });
+
+          if (clinicalResponse.ok) {
+            const clinicalData = await clinicalResponse.json();
+            setClinicalData({
+              chiefComplaint: clinicalData.chief_complaint || "",
+              symptoms: clinicalData.symptoms || [],
+              duration: clinicalData.duration || "",
+              severity: clinicalData.severity || "",
+              bodyLocation: clinicalData.body_location || "",
+              associatedSymptoms: clinicalData.associated_symptoms || [],
+              urgency: clinicalData.urgency || "routine",
+            });
+          }
+        } catch (clinicalError) {
+          console.error("Clinical extraction failed:", clinicalError);
+        }
+      }
     } catch (err) {
       setError(err.message || "Translation failed.");
       setIsProcessing(false);
@@ -175,6 +227,15 @@ export default function App() {
     setWarnings([]);
     setShowEnglish(false);
     setIsProcessing(false);
+    setClinicalData({
+      chiefComplaint: "",
+      symptoms: [],
+      duration: "",
+      severity: "",
+      bodyLocation: "",
+      associatedSymptoms: [],
+      urgency: "routine",
+    });
   };
 
   const reRecord = () => {
@@ -198,12 +259,17 @@ export default function App() {
   return (
     <main className="app-shell">
       <section className="panel">
-        <h1>Patient Voice Input</h1>
-        <p className="subtitle">Record speech and view the transcript.</p>
+        <h1 className="display-title">VaaniDoc</h1>
+        <p className="subtitle">
+          Patient Voice Input for Clinical Documentation
+        </p>
 
         <label className="field">
           <span>Language</span>
-          <select value={language} onChange={(event) => setLanguage(event.target.value)} disabled={isRecording || isProcessing}>
+          <select
+            value={language}
+            onChange={(event) => setLanguage(event.target.value)}
+            disabled={isRecording || isProcessing}>
             {SUPPORTED_LANGUAGES.map((item) => (
               <option key={item.code} value={item.code}>
                 {item.label}
@@ -214,16 +280,17 @@ export default function App() {
 
         <button
           type="button"
-          className={isRecording ? "recording" : ""}
+          className={isRecording ? "btn btn-danger" : "btn btn-primary"}
           onClick={isRecording ? stopRecording : startRecording}
-          disabled={isProcessing}
-        >
+          disabled={isProcessing}>
           {isRecording ? "Stop Recording" : "Start Recording"}
         </button>
 
-        {isProcessing ? <p className="status">Processing...</p> : null}
+        {isProcessing ? (
+          <p className="status status-badge success">Processing...</p>
+        ) : null}
 
-        {error ? <p className="error">{error}</p> : null}
+        {error ? <p className="message-error">{error}</p> : null}
 
         {/* Transcript display section */}
         {transcript && (
@@ -234,7 +301,10 @@ export default function App() {
             warnings={warnings}
             onReview={() => {
               // Doctor can review in EHR system
-              window.open(`/ehr-review?patient=${language}&text=${encodeURIComponent(transcript)}`, "_blank");
+              window.open(
+                `/ehr-review?patient=${language}&text=${encodeURIComponent(transcript)}`,
+                "_blank",
+              );
             }}
             onCopy={() => {
               // Copy the transcript to clipboard
@@ -244,54 +314,46 @@ export default function App() {
           />
         )}
 
-        {confirmationState === "idle" && transcript ? (
+        {confirmationState === "idle" && transcript && (
           <div>
             <p className="step">Step 1: Speech recognized</p>
             <p className="step">Step 2: Language detected</p>
             <p className="step">Step 3: Patient statement confirmed</p>
-            <p>{transcript}</p>
+            <p className="body-text">{transcript}</p>
             <div>
-              <button onClick={confirmPatientStatement} className="btn">
+              <button
+                onClick={confirmPatientStatement}
+                className="btn btn-primary">
                 Confirm
               </button>
-              <button onClick={editReEnter} className="btn">
+              <button onClick={editReEnter} className="btn btn-secondary">
                 Edit/re-enter
               </button>
-              <button onClick={reRecord} className="btn">
+              <button onClick={reRecord} className="btn btn-secondary">
                 Re-record
               </button>
             </div>
             <DoctorReview
-    englishText={englishText}
-    originalText={originalText}
-    verificationStatus={verificationStatus}
-    warnings={warnings}
-    clinicalData={{
-      chiefComplaint: "Chief complaint goes here",
-      symptoms: ["symptom 1", "symptom 2"],
-      duration: "2 days",
-      severity: "mild",
-      bodyLocation: "chest",
-      associatedSymptoms: ["cough", "fatigue"],
-      urgency: "routine",
-    }}
-    onClinicalDataChange={(data) => {
-      // Update clinical state
-    }}
-    onCopyCase={() => {
-      // Copy case data
-    }}
-    onRetranslate={() => {
-      // Re-translate the patient statement
-    }}
-  />
+              englishText={englishText}
+              originalText={originalText}
+              verificationStatus={verificationStatus}
+              warnings={warnings}
+              clinicalData={clinicalData}
+              onClinicalDataChange={(data) => setClinicalData(data)}
+              onCopyCase={() => {
+                // Copy case data
+              }}
+              onRetranslate={() => {
+                // Re-translate the patient statement
+              }}
+            />
           </div>
-        ) : null}
+        )}
 
         {confirmationState === "translating" ? (
           <div>
             <p className="step">Translating to English</p>
-            <p className="step">Checking translation</p>
+            <p className="step">Checking translation safety</p>
             <p>Please wait while the translation is processed...</p>
           </div>
         ) : null}
@@ -300,11 +362,66 @@ export default function App() {
           <div>
             <p className="step">✓ Translation ready</p>
             <p>English translation is available for the doctor's reference.</p>
-            <p className="text-sm text-gray-600">
+            <p className="caption text-gray-500">
               The original statement is always preserved above.
             </p>
           </div>
         ) : null}
+
+        {/* Clinical summary even after confirmation */}
+        {confirmationState === "confirmed" && (
+          <div className="mt-6 panel">
+            <h3 className="font-semibold text-gray-900 mb-3">
+              Clinical Summary
+            </h3>
+            <div className="grid-two-col">
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Chief Complaint</p>
+                <p className="text-base font-medium whitespace-pre-wrap">
+                  {clinicalData.chiefComplaint}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Urgency</p>
+                <p
+                  className={
+                    clinicalData.urgency === "emergency"
+                      ? "text-error"
+                      : "text-success"
+                  }
+                  font-medium>
+                  {clinicalData.urgency}
+                </p>
+              </div>
+            </div>
+            <div className="grid-two-col">
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Symptoms</p>
+                <p className="text-base whitespace-pre-wrap">
+                  {clinicalData.symptoms.join(", ") || "None detected"}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Severity</p>
+                <p className="text-base">
+                  {clinicalData.severity || "Not specified"}
+                </p>
+              </div>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 mb-1">Body Location</p>
+              <p className="text-base">
+                {clinicalData.bodyLocation || "Not specified"}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 mb-1">Duration</p>
+              <p className="text-base">
+                {clinicalData.duration || "Not specified"}
+              </p>
+            </div>
+          </div>
+        )}
       </section>
     </main>
   );

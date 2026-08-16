@@ -3,19 +3,19 @@ Displays the English translation as the PRIMARY readable content,
 with the original Indian-language text as a reference/source.
 Shows verification status and allows doctor clinical review.
 
-Follows existing VaaniDoc dashboard design (Tailwind CSS, panel conventions).
+Follows modern VaaniDoc dashboard design.
 English translation is the primary readable representation.
 Original Indian-language text remains as source/reference.
 Doctor remains the final clinical reviewer.
 AI-generated translation is clearly labeled.
-Warnings are visually obvious when verification_needs_review.
+Warnings are visually obvious when verification needs review.
 Does not diagnose the patient.
 Does not allow AI output to silently overwrite doctor-entered information.
 */
 
 import React, { useState } from "react";
 
-/** DoctorReview - Doctor-side translation review component */
+/* DoctorReview - Doctor-side translation review component */
 export default function DoctorReview({
   englishText,
   originalText,
@@ -47,7 +47,7 @@ export default function DoctorReview({
 
   const { label, className, accent } = getStatusInfo();
 
-  /* Warning messages HTML */
+  /* Warning messages */
   const warningItems = (warnings || []).map(
     (w, i) => (
       <div key={i} className="pb-2 border-t border-gray-200 last:border-0">
@@ -68,10 +68,10 @@ export default function DoctorReview({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-2xl mx-auto">
       {/* English Patient Statement - PRIMARY content */}
       <div className="panel p-6 border-b border-gray-200">
-        <h3 className="font-semibold text-gray-900 mb-4">
+        <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
           <span className="text-lg text-gray-500">English Patient Statement</span>
           <span className="text-xs text-gray-400 ml-auto">
             {"AI-generated translation"}
@@ -89,7 +89,7 @@ export default function DoctorReview({
         onClick={toggleWarnings}
         role="button"
         tabIndex={0}>
-        <h3 className="font-semibold text-gray-900 mb-2">
+        <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
           <span className="text-lg text-gray-500">Translation Status</span>
           <span className="text-xs text-gray-400 ml-auto ${accent}-600">
             {label}
@@ -212,7 +212,7 @@ export default function DoctorReview({
         {onCopyCase && (
           <button
             onClick={onCopyCase}
-            className="btn"
+            className="btn btn-secondary"
           >
             Copy Case
           </button>
@@ -220,7 +220,7 @@ export default function DoctorReview({
         {onRetranslate && (
           <button
             onClick={onRetranslate}
-            className="btn"
+            className="btn btn-secondary"
           >
             Re-translate
           </button>
