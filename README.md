@@ -644,7 +644,7 @@ More time for patient care
 
 **Project:** VaaniDoc
 **Track:** Social Impact & Inclusion
-**Problem:** PS-03 — Multilingual AI Health Intake System for Rural Clinics
+**Problem:** Multilingual AI Health Intake System for Rural Clinics
 **Domain:** AI + Healthcare + NLP
 
 ---
