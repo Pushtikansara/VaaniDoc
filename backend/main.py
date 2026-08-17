@@ -29,7 +29,8 @@ Privacy:
   - No patient text is logged to console.
 
 Run from the project root:
-  uvicorn backend.main:app --reload --port 8000
+  uvicorn backend.main:app --reload --port 8000 
+  python -m uvicorn backend.main:app --reload --port 8000
 """
 
 from backend.clinical_api import router as clinical_router
