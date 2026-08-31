@@ -5,8 +5,30 @@ import { useNavigate, Navigate } from "react-router-dom";
 import { Copy, Play, Pencil, RotateCcw, ArrowRight } from "lucide-react";
 
 export default function Transcript() {
-  const { transcript, language, fetchTranslation, startRecording } = useApp();
+  const { transcript, setTranscript, language, fetchTranslation, audioUrl } = useApp();
   const navigate = useNavigate();
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [localTranscript, setLocalTranscript] = React.useState(transcript);
+  const audioRef = React.useRef(null);
+  const [isPlaying, setIsPlaying] = React.useState(false);
+
+  React.useEffect(() => {
+    setLocalTranscript(transcript);
+  }, [transcript]);
+
+  const handlePlayToggle = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      } else {
+        audioRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handleAudioEnded = () => setIsPlaying(false);
 
   if (!transcript) {
     return <Navigate to="/intake" />;
@@ -54,33 +76,73 @@ export default function Transcript() {
 
           {/* Transcript Box */}
           <div className="border border-[var(--color-border)] rounded-xl p-8 mb-6 bg-[var(--color-bg-app)] shadow-inner">
-             <p className="text-xl md:text-2xl text-[var(--color-navy)] leading-relaxed font-semibold whitespace-pre-wrap">
-               {transcript}
-             </p>
+             {isEditing ? (
+                <textarea 
+                   className="w-full h-40 p-4 text-xl md:text-2xl text-[var(--color-navy)] leading-relaxed font-semibold bg-white border-2 border-[var(--color-navy)] rounded-lg outline-none resize-y"
+                   value={localTranscript}
+                   onChange={(e) => setLocalTranscript(e.target.value)}
+                   autoFocus
+                />
+             ) : (
+                <p className="text-xl md:text-2xl text-[var(--color-navy)] leading-relaxed font-semibold whitespace-pre-wrap">
+                  {transcript}
+                </p>
+             )}
           </div>
 
-          {/* Minimal Audio Player Placeholder */}
-          <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-6 mb-8">
-             <div className="flex items-center gap-4 flex-1">
-                <button className="bg-[var(--color-white)] border border-[var(--color-border)] rounded-full w-10 h-10 flex items-center justify-center cursor-pointer shadow-sm hover:border-[var(--color-navy)] transition-colors">
-                   <Play size={18} className="text-[var(--color-navy)] ml-1" />
+          {/* Minimal Audio Player */}
+          <div className="flex items-center justify-between pb-6 mb-8 mt-2" style={{ borderBottom: '1px solid var(--color-border)' }}>
+             <div className="flex items-center flex-1" style={{ gap: '1rem' }}>
+                {audioUrl && <audio ref={audioRef} src={audioUrl} onEnded={handleAudioEnded} style={{ display: 'none' }} preload="auto" />}
+                
+                <button 
+                  onClick={handlePlayToggle} 
+                  className="btn btn-primary"
+                  style={{ borderRadius: 'var(--radius-pill)', width: '48px', height: '48px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  title="Play Original Audio"
+                >
+                   {isPlaying ? (
+                     <div style={{ width: '14px', height: '14px', backgroundColor: 'var(--color-white)', borderRadius: '3px' }} />
+                   ) : (
+                     <Play size={20} style={{ color: 'var(--color-white)', fill: 'currentColor', marginLeft: '4px' }} />
+                   )}
                 </button>
-                <div className="h-1.5 flex-1 max-w-[200px] bg-gray-200 rounded-full relative">
-                   <div className="absolute top-0 left-0 h-1.5 bg-[var(--color-navy)] rounded-full w-[35%]"></div>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, maxWidth: '240px' }}>
+                   <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-navy)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                     {isPlaying ? "Playing Original Audio" : "Play Original Audio"}
+                   </span>
+                   <div style={{ height: '6px', width: '100%', backgroundColor: 'var(--color-border)', borderRadius: 'var(--radius-pill)', overflow: 'hidden', position: 'relative' }}>
+                      {isPlaying ? (
+                         <div style={{ position: 'absolute', top: 0, left: 0, height: '6px', backgroundColor: 'var(--color-navy)', width: '100%', transition: 'all 1s' }}></div>
+                      ) : (
+                         <div style={{ position: 'absolute', top: 0, left: 0, height: '6px', backgroundColor: 'var(--color-text-light)', opacity: 0.5, width: '100%', transition: 'all 0.3s' }}></div>
+                      )}
+                   </div>
                 </div>
-                <span className="text-xs font-bold text-[var(--color-text-muted)] tracking-wider">00:00 / 00:12</span>
              </div>
-             <button className="flex items-center gap-2 bg-transparent border-none cursor-pointer text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] hover:text-[var(--color-navy)] transition-colors">
-                <Copy size={16} /> Copy
+             
+             <button 
+                onClick={() => navigator.clipboard.writeText(transcript)} 
+                className="btn btn-secondary"
+                style={{ borderRadius: 'var(--radius-pill)', padding: '0.5rem 1rem', fontSize: '0.85rem' }}
+             >
+                <Copy size={16} style={{ color: 'var(--color-navy)', marginRight: '6px' }} /> Copy Text
              </button>
           </div>
 
           {/* Actions */}
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
              <div className="flex gap-4 w-full sm:w-auto">
-               <button className="btn btn-secondary text-xs flex-1 sm:flex-none justify-center">
-                 <Pencil size={14} className="text-[var(--color-text-muted)]" /> Edit
-               </button>
+               {isEditing ? (
+                 <button onClick={() => { setTranscript(localTranscript); setIsEditing(false); }} className="btn btn-primary text-xs flex-1 sm:flex-none justify-center">
+                    Save Changes
+                 </button>
+               ) : (
+                 <button onClick={() => setIsEditing(true)} className="btn btn-secondary text-xs flex-1 sm:flex-none justify-center">
+                   <Pencil size={14} className="text-[var(--color-text-muted)]" /> Edit
+                 </button>
+               )}
                <button onClick={handleReRecord} className="btn btn-secondary text-xs flex-1 sm:flex-none justify-center">
                  <RotateCcw size={14} className="text-[var(--color-text-muted)]" /> Re-record
                </button>

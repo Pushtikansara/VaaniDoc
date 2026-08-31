@@ -1,23 +1,23 @@
 import React, { useState, useEffect } from "react";
 import { useApp } from "../context/AppContext";
 import { SUPPORTED_LANGUAGES } from "../services/languages";
-import { Mic, Square, Loader2, Globe, Pause, RotateCcw } from "lucide-react";
+import { Mic, Square, Loader2, Globe, Pause, Play, RotateCcw } from "lucide-react";
 
 export default function PatientIntake() {
-  const { language, setLanguage, isRecording, isProcessing, startRecording, stopRecording, error } = useApp();
+  const { language, setLanguage, isRecording, isPaused, togglePause, isProcessing, startRecording, stopRecording, error } = useApp();
   const [recordingTime, setRecordingTime] = useState(0);
 
   useEffect(() => {
     let interval;
-    if (isRecording) {
+    if (isRecording && !isPaused) {
       interval = setInterval(() => {
         setRecordingTime((prev) => prev + 1);
       }, 1000);
-    } else {
+    } else if (!isRecording) {
       setRecordingTime(0);
     }
     return () => clearInterval(interval);
-  }, [isRecording]);
+  }, [isRecording, isPaused]);
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -91,7 +91,7 @@ export default function PatientIntake() {
 
           <div className={`transition-all duration-300 ease-in-out ${isProcessing ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
             {/* Microphone Recording Layout */}
-            <div className={`mic-wrapper ${isRecording ? 'is-recording' : ''}`}>
+            <div className={`mic-wrapper ${isRecording && !isPaused ? 'is-recording' : ''}`}>
                <div className="mic-ring mic-ring-1"></div>
                <div className="mic-ring mic-ring-2"></div>
                <button
@@ -104,13 +104,19 @@ export default function PatientIntake() {
             </div>
             
             <div className="mt-8 mb-8 min-h-[32px]">
-               {isRecording ? (
-                 <div className="flex flex-col items-center">
-                    <span className="text-lg font-bold text-[var(--color-navy)] tracking-wider mb-2">{formatTime(recordingTime)}</span>
-                    <span className="text-[10px] font-bold text-red-600 uppercase tracking-[0.2em] flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span> Recording Audio...
-                    </span>
-                 </div>
+                {isRecording ? (
+                  <div className="flex flex-col items-center">
+                     <span className="text-lg font-bold text-[var(--color-navy)] tracking-wider mb-2" style={{ opacity: isPaused ? 0.5 : 1 }}>{formatTime(recordingTime)}</span>
+                     {isPaused ? (
+                       <span className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-[0.2em] flex items-center gap-2">
+                         <span className="w-2 h-2 rounded-full bg-gray-400"></span> Paused
+                       </span>
+                     ) : (
+                       <span className="text-[10px] font-bold text-red-600 uppercase tracking-[0.2em] flex items-center gap-2">
+                         <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span> Recording Audio...
+                       </span>
+                     )}
+                  </div>
                ) : (
                  <p className="text-xs font-bold uppercase tracking-[0.1em] text-[var(--color-text-light)]">System Ready</p>
                )}
@@ -123,14 +129,14 @@ export default function PatientIntake() {
             )}
 
             <div className="flex justify-center items-center gap-4 border-t border-[var(--color-border)] pt-8">
-               <button className="btn btn-secondary text-xs" disabled={!isRecording}>
-                  <Pause size={14} /> Pause
+               <button className={`btn btn-secondary text-xs flex items-center justify-center`} style={{ minWidth: '100px', backgroundColor: isPaused ? 'var(--color-white)' : '', borderColor: isPaused ? 'var(--color-navy)' : '', color: isPaused ? 'var(--color-navy)' : '' }} disabled={!isRecording} onClick={togglePause}>
+                  {isPaused ? <><Play size={14} /> Resume</> : <><Pause size={14} /> Pause</>}
                </button>
                <button className={`btn shadow-md text-sm px-8 ${isRecording ? 'bg-red-600 text-white hover:bg-red-700 border-red-600' : 'btn-primary'}`} 
                        onClick={isRecording ? stopRecording : startRecording}>
                   {isRecording ? <><Square size={16} fill="currentColor" /> Stop Recording</> : "Start Session"}
                </button>
-               <button className="btn btn-secondary text-xs" disabled={isRecording}>
+               <button className="btn btn-secondary text-xs" disabled={isRecording} onClick={() => { if(window.confirm('Clear and record again?')) startRecording(); }}>
                   <RotateCcw size={14} /> Record Again
                </button>
             </div>
