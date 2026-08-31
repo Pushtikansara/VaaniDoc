@@ -41,8 +41,8 @@ export default function Layout({ children }) {
             <Menu size={24} className="text-[var(--color-navy)]" />
           </button>
           
-          <Link to="/" className="flex items-center gap-2 text-xl font-bold text-[var(--color-navy)] no-underline">
-            <Stethoscope size={28} className="text-[var(--color-brown)]" />
+          <Link to="/" className="flex items-center gap-2 text-xl font-bold no-underline" style={{ textDecoration: 'none', color: 'var(--color-navy)' }}>
+            <Stethoscope size={28} style={{ color: 'var(--color-brown)' }} />
             <span className="hidden sm:block">VaaniDoc</span>
           </Link>
         </div>
@@ -74,11 +74,9 @@ export default function Layout({ children }) {
                   <Link
                     key={link.path}
                     to={link.path}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all no-underline ${
-                      isActive ? "bg-[var(--color-navy)] text-white shadow-md" : "text-[var(--color-text-main)] hover:bg-[var(--color-bg-app)]"
-                    }`}
+                    className={`nav-link ${isActive ? "nav-link-active" : ""}`}
                   >
-                    <span className={isActive ? "text-[var(--color-cream)]" : "text-[var(--color-brown)]"}>{link.icon}</span>
+                    <span className="nav-icon">{link.icon}</span>
                     {link.label}
                   </Link>
                 )
@@ -93,11 +91,9 @@ export default function Layout({ children }) {
                   <Link
                     key={link.path}
                     to={link.path}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all no-underline ${
-                      isActive ? "bg-[var(--color-navy)] text-white shadow-md" : "text-[var(--color-text-main)] hover:bg-[var(--color-bg-app)]"
-                    }`}
+                    className={`nav-link ${isActive ? "nav-link-active" : ""}`}
                   >
-                    <span className={isActive ? "text-[var(--color-cream)]" : "text-[var(--color-brown)]"}>{link.icon}</span>
+                    <span className="nav-icon">{link.icon}</span>
                     {link.label}
                   </Link>
                 )
@@ -116,19 +112,19 @@ export default function Layout({ children }) {
         {/* Mobile Drawer Overlay */}
         {isMobileMenuOpen && (
           <div 
-            className="fixed inset-0 bg-[rgba(10,41,71,0.3)] backdrop-blur-sm z-50 transition-opacity animate-fade-in lg:hidden"
+            className="mobile-drawer-overlay lg:hidden"
             onClick={closeMenu}
           />
         )}
 
         {/* Mobile Drawer */}
-        <div className={`fixed top-0 left-0 h-full w-[280px] bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out lg:hidden flex flex-col ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
-          <div className="p-5 border-b border-[var(--color-border)] flex justify-between items-center bg-[var(--color-bg-app)]">
-            <Link to="/" className="flex items-center gap-2 text-xl font-bold text-[var(--color-navy)] no-underline" onClick={closeMenu}>
-              <Stethoscope size={24} className="text-[var(--color-brown)]" /> VaaniDoc
+        <div className={`mobile-drawer lg:hidden ${isMobileMenuOpen ? "open" : ""}`}>
+          <div className="mobile-drawer-header">
+            <Link to="/" className="flex items-center gap-2 text-xl font-bold no-underline" onClick={closeMenu} style={{ textDecoration: 'none', color: 'var(--color-navy)' }}>
+              <Stethoscope size={24} style={{ color: 'var(--color-brown)' }} /> VaaniDoc
             </Link>
-            <button onClick={closeMenu} className="p-2 border-none bg-transparent hover:bg-white inset-ring rounded-md cursor-pointer transition-colors">
-              <X size={20} className="text-[var(--color-text-muted)]" />
+            <button onClick={closeMenu} className="drawer-close-btn" aria-label="Close menu">
+              <X size={24} />
             </button>
           </div>
           
@@ -142,11 +138,10 @@ export default function Layout({ children }) {
                     key={link.path}
                     to={link.path}
                     onClick={closeMenu}
-                    className={`flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold transition-all no-underline ${
-                      isActive ? "bg-[var(--color-navy)] text-white shadow-sm" : "text-[var(--color-text-main)] hover:bg-[var(--color-bg-app)]"
-                    }`}
+                    className={`nav-link ${isActive ? "nav-link-active" : ""}`}
+                    style={{ padding: '14px 16px' }}
                   >
-                    <span className={isActive ? "text-[var(--color-cream)]" : "text-[var(--color-brown)]"}>{link.icon}</span>
+                    <span className="nav-icon">{link.icon}</span>
                     {link.label}
                   </Link>
                 )

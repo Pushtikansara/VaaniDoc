@@ -17,20 +17,20 @@ export default function Settings() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-10 items-start">
         {/* Settings Sidebar Nav */}
         <div className="flex flex-col gap-2 relative md:sticky top-24">
-           <button className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold bg-[var(--color-navy)] text-white text-left transition-colors cursor-pointer border-none shadow-md">
-              <Monitor size={18} /> Appearance
+           <button className="nav-link nav-link-active">
+              <span className="nav-icon"><Monitor size={18} /></span> Appearance
            </button>
-           <button className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-[var(--color-text-main)] hover:bg-white text-left transition-colors cursor-pointer border-none">
-              <Globe size={18} /> Language
+           <button className="nav-link">
+              <span className="nav-icon"><Globe size={18} /></span> Language
            </button>
-           <button className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-[var(--color-text-main)] hover:bg-white text-left transition-colors cursor-pointer border-none">
-              <Mic size={18} /> Audio & Devices
+           <button className="nav-link">
+              <span className="nav-icon"><Mic size={18} /></span> Audio & Devices
            </button>
-           <button className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-[var(--color-text-main)] hover:bg-white text-left transition-colors cursor-pointer border-none">
-              <Shield size={18} /> Privacy
+           <button className="nav-link">
+              <span className="nav-icon"><Shield size={18} /></span> Privacy
            </button>
-           <button className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-[var(--color-text-main)] hover:bg-white text-left transition-colors cursor-pointer border-none">
-              <Server size={18} /> System Status
+           <button className="nav-link">
+              <span className="nav-icon"><Server size={18} /></span> System Status
            </button>
         </div>
 

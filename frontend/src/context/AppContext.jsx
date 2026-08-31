@@ -10,10 +10,12 @@ export const useApp = () => useContext(AppContext);
 export const AppProvider = ({ children }) => {
   const [language, setLanguage] = useState("gu");
   const [isRecording, setIsRecording] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [originalText, setOriginalText] = useState("");
   const [englishText, setEnglishText] = useState("");
+  const [audioUrl, setAudioUrl] = useState(null);
   const [verificationStatus, setVerificationStatus] = useState("consistent");
   const [warnings, setWarnings] = useState([]);
   const [error, setError] = useState("");
@@ -46,6 +48,11 @@ export const AppProvider = ({ children }) => {
     setTranscript("");
     setOriginalText("");
     setEnglishText("");
+    setIsPaused(false);
+    setAudioUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
     setVerificationStatus("consistent");
     setWarnings([]);
     setClinicalData({
@@ -103,6 +110,9 @@ export const AppProvider = ({ children }) => {
             type: recorder.mimeType || "audio/webm",
           });
           const wavBlob = await mediaBlobToWav(blob);
+          
+          setAudioUrl(URL.createObjectURL(wavBlob));
+
           const result = await transcribeAudio(wavBlob, language);
           const transcriptText = result.transcript || "";
 
@@ -130,6 +140,19 @@ export const AppProvider = ({ children }) => {
     const recorder = mediaRecorderRef.current;
     if (recorder && recorder.state !== "inactive") {
       recorder.stop();
+    }
+  };
+
+  const togglePause = () => {
+    const recorder = mediaRecorderRef.current;
+    if (recorder) {
+      if (recorder.state === "recording") {
+        recorder.pause();
+        setIsPaused(true);
+      } else if (recorder.state === "paused") {
+        recorder.resume();
+        setIsPaused(false);
+      }
     }
   };
 
@@ -211,7 +234,11 @@ export const AppProvider = ({ children }) => {
     startRecording,
     stopRecording,
     fetchTranslation,
-    resetAll
+    resetAll,
+    audioUrl,
+    setTranscript,
+    isPaused,
+    togglePause
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
