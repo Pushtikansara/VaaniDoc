@@ -120,3 +120,67 @@ button:disabled {
   line-height: 1.5;
   word-break: break-word;
 }
+
+.panel.panel-wide {
+  width: min(100%, 720px);
+}
+
+.tab-nav {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 8px;
+}
+
+.tab-btn {
+  background: transparent;
+  color: #64748b;
+  border: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 8px 14px;
+  cursor: pointer;
+  border-radius: 6px;
+  margin: 0;
+  min-height: auto;
+  width: auto;
+}
+
+.tab-btn.active {
+  background: #0077b6;
+  color: #ffffff;
+}
+
+.text-input-area {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #bcc9dd;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  margin-top: 12px;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.btn {
+  border: 0;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.step-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 12px;
+  margin-top: 16px;
+}
+
