@@ -1,24 +1,7 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { updateReportData, downloadReportPdf, endSession } from "../services/api";
 
-/* Doctor Translation Review Component for VaaniDoc
-Displays the English translation as the PRIMARY readable content,
-with the original Indian-language text as a reference/source.
-Shows verification status and allows doctor clinical review.
-
-Follows modern VaaniDoc dashboard design.
-English translation is the primary readable representation.
-Original Indian-language text remains as source/reference.
-Doctor remains the final clinical reviewer.
-AI-generated translation is clearly labeled.
-Warnings are visually obvious when verification needs review.
-Does not diagnose the patient.
-Does not allow AI output to silently overwrite doctor-entered information.
-*/
-
-import React, { useState } from "react";
-
-/* DoctorReview - Doctor-side translation review component */
+/* DoctorReview - Doctor-side translation and clinical report review component */
 export default function DoctorReview({
   sessionId,
   reportData,
@@ -1062,15 +1045,6 @@ export default function DoctorReview({
               </div>
             </div>
           </div>
-      {/* Action buttons */}
-      <div className="flex justify-end space-x-3">
-        {onCopyCase && (
-          <button
-            onClick={onCopyCase}
-            className="btn btn-secondary"
-          >
-            Copy Case
-          </button>
         )}
       </div>
 
@@ -1091,16 +1065,15 @@ export default function DoctorReview({
             onClick={handleDownloadPdf}
             disabled={isDownloading}
             style={{ background: "#0284c7", color: "white", padding: "6px 12px", borderRadius: "4px", border: "none", cursor: "pointer", fontWeight: "600", fontSize: "0.8rem" }}
-            onClick={onRetranslate}
-            className="btn btn-secondary"
           >
-            📥 Download Verified PDF
+            {isDownloading ? "Generating PDF..." : "📥 Download Verified PDF"}
           </button>
         </div>
       </div>
       <p style={{ margin: "8px 0 0 0", fontSize: "0.75rem", color: "#94a3b8", textAlign: "center", fontStyle: "italic" }}>
         {report?.disclaimer}
       </p>
+    </div>
     </div>
   );
 }

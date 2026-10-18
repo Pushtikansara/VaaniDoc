@@ -440,17 +440,12 @@ async def intake(
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         except TranslationFailedError:
             logger.warning("Translation model failed at runtime; using offline state")
-            logger.warning(
-                "Translation model failed at runtime; using fallback output")
             english_text = _build_translation_fallback(transcript)
         except Exception:
             raise HTTPException(status_code=500, detail="Translation failed")
 
     # Safety verification
     verification_result = verify_translation(transcript, language, english_text)
-    # ---- 4. Translation safety verification ----
-    verification_result = verify_translation(
-        transcript, language, english_text)
 
     # Clinical extraction & urgency
     clinical_data, urgency = _process_clinical_and_urgency(english_text, transcript)
@@ -476,17 +471,6 @@ async def intake(
             "status": verification_result.get("status", "consistent"),
             "warnings": verification_result.get("warnings", []),
         },
-    # Merge: deep symptom list takes precedence; fill other fields from quick pass
-    symptoms = deep_symptom_names if deep_symptom_names else quick_clinical.get(
-        "symptoms", [])
-    severity = quick_clinical.get("severity")
-    duration = quick_clinical.get("duration")
-    body_location = quick_clinical.get("body_location")
-
-    # Chief complaint = first active symptom (or first quick keyword)
-    chief_complaint = symptoms[0] if symptoms else (
-        quick_clinical["symptoms"][0] if quick_clinical.get(
-            "symptoms") else None
     )
 
 
@@ -634,6 +618,3 @@ async def end_session_unified(
     if success:
         return {"status": "session_ended", "session_id": target_id}
     raise HTTPException(status_code=404, detail="Session not found or already ended")
-        return {"status": "session_ended", "session_id": session_id}
-    raise HTTPException(
-        status_code=404, detail="Session not found or already ended")
