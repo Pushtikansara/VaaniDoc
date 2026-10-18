@@ -29,9 +29,41 @@ Privacy:
   - No patient text is logged to console.
 
 Run from the project root:
-  uvicorn backend.main:app --reload --port 8000
+  uvicorn backend.main:app --reload --port 8000 
+  python -m uvicorn backend.main:app --reload --port 8000
 """
 
+from backend.clinical_api import router as clinical_router
+from backend.translation_api import router as translation_router
+from backend.speech_api import router as speech_router
+from backend.report import generate_pdf_report
+from ai.clinical.schemas import (
+    ClinicalExtractionRequest,
+    ClinicalInformation,
+    ClinicalResult,
+    UrgencyInformation,
+)
+from ai.clinical.extraction import extract_symptoms as _extract_symptoms_deep
+from ai.translation.clinical_extraction import (
+    extract_clinical_info as _extract_clinical_quick,
+    ClinicalData,
+)
+from ai.translation.language_map import is_supported_language, get_language_name
+from ai.translation.sessions import (
+    create_session,
+    get_session,
+    update_session,
+    delete_session,
+)
+from ai.translation.translation_safety import verify_translation
+from ai.translation.translator import (
+    translate as _translate,
+    get_model_status,
+    InvalidInputError,
+    UnsupportedLanguageError,
+    TranslationFailedError,
+)
+from ai.speech.asr import LANGUAGE_CODES, transcribe as _asr_transcribe
 import logging
 import sys
 from pathlib import Path
@@ -53,57 +85,31 @@ if str(ROOT_DIR) not in sys.path:
 # ---------------------------------------------------------------------------
 # Module imports — Member 1: Speech
 # ---------------------------------------------------------------------------
-from ai.speech.asr import LANGUAGE_CODES, transcribe as _asr_transcribe
 
 # ---------------------------------------------------------------------------
 # Module imports — Member 2: Translation
 # ---------------------------------------------------------------------------
-from ai.translation.translator import (
-    translate as _translate,
-    get_model_status,
-    InvalidInputError,
-    UnsupportedLanguageError,
-    TranslationFailedError,
-)
-from ai.translation.translation_safety import verify_translation
-from ai.translation.sessions import (
-    create_session,
-    get_session,
-    update_session,
-    delete_session,
-)
-from ai.translation.language_map import is_supported_language, get_language_name
-from ai.translation.clinical_extraction import (
-    extract_clinical_info as _extract_clinical_quick,
-    ClinicalData,
-)
 
 # ---------------------------------------------------------------------------
 # Module imports — Member 3: Clinical Extraction (deeper symptom matching)
 # ---------------------------------------------------------------------------
-from ai.clinical.extraction import extract_symptoms as _extract_symptoms_deep
-from ai.clinical.schemas import (
-    ClinicalExtractionRequest,
-    ClinicalInformation,
-    ClinicalResult,
-    UrgencyInformation,
-)
 
 # ---------------------------------------------------------------------------
 # Module imports — Report generation
 # ---------------------------------------------------------------------------
-from backend.report import generate_pdf_report
 
 # ---------------------------------------------------------------------------
 # Logging — no patient data
 # ---------------------------------------------------------------------------
 logger = logging.getLogger("vaani.main")
-logging.basicConfig(level=logging.INFO, format="%(levelname)s  %(name)s  %(message)s")
+logging.basicConfig(level=logging.INFO,
+                    format="%(levelname)s  %(name)s  %(message)s")
 
 
 def _build_translation_fallback(transcript: str) -> str:
     """Return a safe development fallback when the translation model is unavailable."""
     return f"[Simulated Translation] Patient states: {transcript}"
+
 
 # ---------------------------------------------------------------------------
 # Temp directory for audio files (deleted immediately after transcription)
@@ -137,7 +143,8 @@ app.add_middleware(
 def startup_model_check():
     status = get_model_status()
     if not status["configured"]:
-        logger.warning("Translation model status at startup: %s", status["message"])
+        logger.warning("Translation model status at startup: %s",
+                       status["message"])
     else:
         logger.info("Translation model configured: %s", status["path"])
 
@@ -166,7 +173,8 @@ def health():
 
 class TranslateRequest(BaseModel):
     text: str = Field(..., description="Indian-language patient statement")
-    source_language: str = Field(..., description="VaaniDoc language code (e.g. 'gu', 'hi')")
+    source_language: str = Field(...,
+                                 description="VaaniDoc language code (e.g. 'gu', 'hi')")
 
     @validator("source_language")
     def validate_source_language(cls, v: str) -> str:
@@ -220,7 +228,8 @@ async def intake(
 
     # ---- 1. Validate language ----
     if language not in LANGUAGE_CODES:
-        raise HTTPException(status_code=400, detail=f"Unsupported language code: {language}")
+        raise HTTPException(
+            status_code=400, detail=f"Unsupported language code: {language}")
 
     if not audio.filename:
         raise HTTPException(status_code=400, detail="Missing audio file")
@@ -241,7 +250,8 @@ async def intake(
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         except Exception as exc:
-            raise HTTPException(status_code=500, detail="Speech transcription failed") from exc
+            raise HTTPException(
+                status_code=500, detail="Speech transcription failed") from exc
 
     finally:
         await audio.close()
@@ -259,13 +269,15 @@ async def intake(
         except UnsupportedLanguageError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         except TranslationFailedError:
-            logger.warning("Translation model failed at runtime; using fallback output")
+            logger.warning(
+                "Translation model failed at runtime; using fallback output")
             english_text = _build_translation_fallback(transcript)
         except Exception:
             raise HTTPException(status_code=500, detail="Translation failed")
 
     # ---- 4. Translation safety verification ----
-    verification_result = verify_translation(transcript, language, english_text)
+    verification_result = verify_translation(
+        transcript, language, english_text)
 
     # ---- 5. Clinical extraction (Member 3 — two layers) ----
     # Layer A: fast keyword extraction (from translation module)
@@ -276,14 +288,16 @@ async def intake(
     deep_symptom_names = [s.name for s in deep_symptoms]
 
     # Merge: deep symptom list takes precedence; fill other fields from quick pass
-    symptoms = deep_symptom_names if deep_symptom_names else quick_clinical.get("symptoms", [])
+    symptoms = deep_symptom_names if deep_symptom_names else quick_clinical.get(
+        "symptoms", [])
     severity = quick_clinical.get("severity")
     duration = quick_clinical.get("duration")
     body_location = quick_clinical.get("body_location")
 
     # Chief complaint = first active symptom (or first quick keyword)
     chief_complaint = symptoms[0] if symptoms else (
-        quick_clinical["symptoms"][0] if quick_clinical.get("symptoms") else None
+        quick_clinical["symptoms"][0] if quick_clinical.get(
+            "symptoms") else None
     )
 
     # ---- 6. Urgency classification ----
@@ -333,9 +347,6 @@ async def intake(
 # Standalone Module Routers
 # ===========================================================================
 
-from backend.speech_api import router as speech_router
-from backend.translation_api import router as translation_router
-from backend.clinical_api import router as clinical_router
 
 app.include_router(speech_router)
 app.include_router(translation_router)
@@ -344,6 +355,7 @@ app.include_router(clinical_router)
 # ===========================================================================
 # GET /api/report/{session_id}  — PDF report download
 # ===========================================================================
+
 
 @app.get("/api/report/{session_id}")
 async def download_report(session_id: str):
@@ -358,13 +370,15 @@ async def download_report(session_id: str):
     """
     session = get_session(session_id)
     if not session:
-        raise HTTPException(status_code=404, detail="Session not found or expired")
+        raise HTTPException(
+            status_code=404, detail="Session not found or expired")
 
     try:
         pdf_bytes = generate_pdf_report(session)
     except Exception as exc:
         logger.error("PDF generation failed: %s", exc)
-        raise HTTPException(status_code=500, detail="Report generation failed") from exc
+        raise HTTPException(
+            status_code=500, detail="Report generation failed") from exc
 
     return StreamingResponse(
         iter([pdf_bytes]),
@@ -385,4 +399,5 @@ async def end_session(session_id: str):
     success = delete_session(session_id)
     if success:
         return {"status": "session_ended", "session_id": session_id}
-    raise HTTPException(status_code=404, detail="Session not found or already ended")
+    raise HTTPException(
+        status_code=404, detail="Session not found or already ended")
