@@ -519,6 +519,74 @@ Test cases cover multiple Indian languages and different symptom scenarios.
 
 ---
 
+# 🛠️ Setup and Execution Guide
+
+### 1. Prerequisites
+- Python 3.10+ (tested on Python 3.13)
+- Node.js 18+ and npm
+- Dependencies installed via `pip install -r backend/requirements.txt` and `cd frontend && npm install`
+
+### 2. Starting the Backend Service
+Run from the repository root:
+```bash
+uvicorn backend.main:app --reload --port 8000
+```
+API Documentation and Swagger UI will be available at:
+`http://127.0.0.1:8000/docs`
+
+### 3. Starting the Frontend UI
+Run from the `frontend/` directory:
+```bash
+cd frontend
+npm run dev
+```
+Open `http://localhost:5173` in any modern web browser or mobile browser.
+
+### 4. Running Automated Tests
+Run the deterministic 26-test suite (covering 20 clinical symptom extraction cases + backend lifecycle):
+```bash
+python -m pytest tests/ -v
+```
+
+### 5. Building Frontend for Production
+```bash
+cd frontend
+npm run build
+```
+
+---
+
+# 📡 Integrated API Routes
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/health` | Service and module readiness health check |
+| `POST` | `/api/intake` | Full voice intake pipeline (Audio + Language → ASR → Translation → Extraction → Urgency) |
+| `POST` | `/api/intake/text` | Full text intake pipeline for typed Indian language symptoms |
+| `POST` | `/api/speech/transcribe` | Standalone ASR speech-to-text |
+| `POST` | `/api/translate` | Standalone IndicTrans2 translation with safety verification |
+| `POST` | `/api/clinical/extract` | Extraction of active symptoms and explicit negative findings |
+| `POST` | `/api/clinical/analyze` | Full clinical extraction with urgency triage classification |
+| `GET` | `/api/report/{session_id}/data` | Structured clinical report JSON for Doctor Dashboard preview |
+| `PUT` | `/api/report/{session_id}` | Doctor updates to clinical findings, triage tier, and clinical notes |
+| `GET` | `/api/report/{session_id}` | Streams a formatted ReportLab PDF clinical intake report |
+| `POST` | `/api/session/end` | Immediately purges patient session data from memory |
+
+---
+
+# 📋 Clinical Reporting & Doctor Dashboard Workflow
+
+1. **Intake Ingestion**: Patient speaks or types symptoms in an Indian regional language (e.g., Gujarati, Hindi, Marathi, etc.) or English.
+2. **Translation & Safety Verification**: The statement is translated into English while checking for negation inversions, duration mismatches, or dosage alterations.
+3. **Clinical Extraction**: Deterministic extraction isolates confirmed active symptoms, explicit negative findings (denied symptoms), symptom duration, severity, and anatomical body location.
+4. **Urgency Triage**: Evaluates clinical findings across 4 tiers (`EMERGENCY`, `HIGH`, `MODERATE`, `ROUTINE`) with an inspectable clinical rationale.
+5. **Doctor Review & Edit**: Attending clinician reviews the intake summary on the Doctor Dashboard, edits findings if necessary, and enters clinical examination notes and treatment orders.
+6. **PDF Export**: Clinician generates a signed, formatted clinical intake PDF report.
+7. **Privacy Cleanup**: On consultation conclusion, the session is cleared from memory with zero persistent patient data retained.
+
+---
+
+
 # 🔒 Privacy Model
 
 VaaniDoc follows a session-based privacy architecture.

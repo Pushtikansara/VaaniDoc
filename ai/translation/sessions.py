@@ -37,8 +37,9 @@ from typing import Dict, Optional, Any
 _session_store: Dict[str, dict] = {}
 
 # Session expiration: seconds after which a session is considered expired.
-# Set to None to disable expiration (sessions persist until explicitly deleted).
-SESSION_EXPIRATION_SECONDS: Optional[int] = None
+# Set to 3600 (1 hour) for privacy-preserving session lifecycle.
+SESSION_EXPIRATION_SECONDS: Optional[int] = 3600
+
 
 
 def _generate_session_id() -> str:
@@ -80,6 +81,7 @@ def create_session(
     Returns:
         session_id: A random-unpredictable session identifier
     """
+    cleanup_expired_sessions()
     session_id = _generate_session_id()
 
     session_data = {

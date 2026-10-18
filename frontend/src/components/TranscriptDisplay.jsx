@@ -42,17 +42,14 @@ export default function TranscriptDisplay({
 
   const { label, className, accent } = getStatusInfo();
 
-  /* Warning messages HTML */
+  /* Warning messages JSX */
   const warningItems = hasWarnings
-    ? warnings.map(
-        (w, i) => /* border-top py-2 */
-      `
-        <div className="pb-2 border-t border-gray-200 last:border-0">
-          <p className="text-sm text-gray-600">${w.message}</p>
+    ? warnings.map((w, i) => (
+        <div key={i} className="pb-2 border-t border-gray-200 last:border-0">
+          <p className="text-sm text-gray-600">{typeof w === "string" ? w : w.message}</p>
         </div>
-      `
-      )
-    : [];
+      ))
+    : null;
 
   return (
     <div className="space-y-4">
