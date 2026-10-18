@@ -28,12 +28,44 @@ Pipelines:
      Immediately erases patient session data from memory (privacy compliance).
 
 Run from the project root:
-  uvicorn backend.main:app --reload --port 8000
+  uvicorn backend.main:app --reload --port 8000 
+  python -m uvicorn backend.main:app --reload --port 8000
 """
 
 from __future__ import annotations
 
 import io
+from backend.clinical_api import router as clinical_router
+from backend.translation_api import router as translation_router
+from backend.speech_api import router as speech_router
+from backend.report import generate_pdf_report
+from ai.clinical.schemas import (
+    ClinicalExtractionRequest,
+    ClinicalInformation,
+    ClinicalResult,
+    UrgencyInformation,
+)
+from ai.clinical.extraction import extract_symptoms as _extract_symptoms_deep
+from ai.translation.clinical_extraction import (
+    extract_clinical_info as _extract_clinical_quick,
+    ClinicalData,
+)
+from ai.translation.language_map import is_supported_language, get_language_name
+from ai.translation.sessions import (
+    create_session,
+    get_session,
+    update_session,
+    delete_session,
+)
+from ai.translation.translation_safety import verify_translation
+from ai.translation.translator import (
+    translate as _translate,
+    get_model_status,
+    InvalidInputError,
+    UnsupportedLanguageError,
+    TranslationFailedError,
+)
+from ai.speech.asr import LANGUAGE_CODES, transcribe as _asr_transcribe
 import logging
 import re
 import sys
@@ -114,7 +146,8 @@ from backend.report import (
 # Logging
 # ---------------------------------------------------------------------------
 logger = logging.getLogger("vaani.main")
-logging.basicConfig(level=logging.INFO, format="%(levelname)s  %(name)s  %(message)s")
+logging.basicConfig(level=logging.INFO,
+                    format="%(levelname)s  %(name)s  %(message)s")
 
 
 INDIC_CLINICAL_MAP = [
@@ -159,6 +192,7 @@ def _build_translation_fallback(transcript: str, language: str = "gu") -> str:
     return f"[Translation Offline: IndicTrans2 Not Configured] Raw Patient Statement: {transcript}"
 
 
+
 # ---------------------------------------------------------------------------
 # Temp directory for audio files (deleted immediately after transcription)
 # ---------------------------------------------------------------------------
@@ -197,7 +231,8 @@ def startup_model_check():
 
     status = get_model_status()
     if not status["configured"]:
-        logger.warning("Translation model status at startup: %s", status["message"])
+        logger.warning("Translation model status at startup: %s",
+                       status["message"])
     else:
         logger.info("Translation model configured: %s", status["path"])
 
@@ -228,7 +263,8 @@ def health():
 
 class TranslateRequest(BaseModel):
     text: str = Field(..., description="Indian-language patient statement")
-    source_language: str = Field(..., description="VaaniDoc language code (e.g. 'gu', 'hi')")
+    source_language: str = Field(...,
+                                 description="VaaniDoc language code (e.g. 'gu', 'hi')")
 
     @field_validator("source_language")
     @classmethod
@@ -359,7 +395,8 @@ async def intake(
     language = language.strip().lower()
 
     if language not in LANGUAGE_CODES:
-        raise HTTPException(status_code=400, detail=f"Unsupported language code: {language}")
+        raise HTTPException(
+            status_code=400, detail=f"Unsupported language code: {language}")
 
     if not audio.filename:
         raise HTTPException(status_code=400, detail="Missing audio file")
@@ -385,6 +422,8 @@ async def intake(
         except Exception as exc:
             logger.error("ASR transcription error: %s", exc)
             raise HTTPException(status_code=500, detail="Speech transcription failed") from exc
+            raise HTTPException(
+                status_code=500, detail="Speech transcription failed") from exc
 
     finally:
         await audio.close()
@@ -401,12 +440,17 @@ async def intake(
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         except TranslationFailedError:
             logger.warning("Translation model failed at runtime; using offline state")
+            logger.warning(
+                "Translation model failed at runtime; using fallback output")
             english_text = _build_translation_fallback(transcript)
         except Exception:
             raise HTTPException(status_code=500, detail="Translation failed")
 
     # Safety verification
     verification_result = verify_translation(transcript, language, english_text)
+    # ---- 4. Translation safety verification ----
+    verification_result = verify_translation(
+        transcript, language, english_text)
 
     # Clinical extraction & urgency
     clinical_data, urgency = _process_clinical_and_urgency(english_text, transcript)
@@ -432,6 +476,17 @@ async def intake(
             "status": verification_result.get("status", "consistent"),
             "warnings": verification_result.get("warnings", []),
         },
+    # Merge: deep symptom list takes precedence; fill other fields from quick pass
+    symptoms = deep_symptom_names if deep_symptom_names else quick_clinical.get(
+        "symptoms", [])
+    severity = quick_clinical.get("severity")
+    duration = quick_clinical.get("duration")
+    body_location = quick_clinical.get("body_location")
+
+    # Chief complaint = first active symptom (or first quick keyword)
+    chief_complaint = symptoms[0] if symptoms else (
+        quick_clinical["symptoms"][0] if quick_clinical.get(
+            "symptoms") else None
     )
 
 
@@ -500,9 +555,6 @@ async def intake_text(request: TextIntakeRequest):
 # Standalone Module Routers
 # ===========================================================================
 
-from backend.speech_api import router as speech_router
-from backend.translation_api import router as translation_router
-from backend.clinical_api import router as clinical_router
 
 app.include_router(speech_router)
 app.include_router(translation_router)
@@ -544,13 +596,15 @@ async def download_report(session_id: str):
     """Generate and stream a valid, professional PDF clinical intake report."""
     session = get_session(session_id)
     if not session:
-        raise HTTPException(status_code=404, detail="Session not found or expired")
+        raise HTTPException(
+            status_code=404, detail="Session not found or expired")
 
     try:
         pdf_bytes = generate_pdf_report(session)
     except Exception as exc:
         logger.error("PDF generation failed: %s", exc)
-        raise HTTPException(status_code=500, detail="Report generation failed") from exc
+        raise HTTPException(
+            status_code=500, detail="Report generation failed") from exc
 
     return StreamingResponse(
         io.BytesIO(pdf_bytes),
@@ -580,3 +634,6 @@ async def end_session_unified(
     if success:
         return {"status": "session_ended", "session_id": target_id}
     raise HTTPException(status_code=404, detail="Session not found or already ended")
+        return {"status": "session_ended", "session_id": session_id}
+    raise HTTPException(
+        status_code=404, detail="Session not found or already ended")

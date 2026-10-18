@@ -34,3 +34,13 @@ async def extract_clinical_info(request: ClinicalExtractionRequest):
 async def analyze_clinical_info(request: ClinicalExtractionRequest):
     """Full clinical AI analysis endpoint including structured extraction and urgency triage."""
     return extract_clinical_result(request.text, session_id=request.session_id)
+    
+    Extracts structured clinical information from English patient text.
+    Returns clinical data along with the original text for documentation.
+    """
+    symptoms = extract_symptoms(request.text)
+    chief = symptoms[0].name if symptoms else None
+    return ClinicalInformation(
+        symptoms=symptoms,
+        chief_complaint=chief,
+    )

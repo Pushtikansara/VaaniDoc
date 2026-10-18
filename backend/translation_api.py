@@ -29,7 +29,6 @@ from ai.translation.clinical_extraction import extract_clinical_info, ClinicalDa
 
 router = APIRouter()
 
-
 def _build_translation_fallback(text: str) -> str:
     """Return a safe development fallback when the translation model is unavailable."""
     return f"[Simulated Translation] Patient states: {text}"
